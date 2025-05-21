@@ -508,17 +508,29 @@ function endQuiz() {
   document.getElementById("submitBtn").disabled = true;
 
   let correctCount = 0;
+  let incorrectQuestions = [];
+
   quizData.forEach((q, i) => {
-    if(selectedAnswers[i] === q.answer) correctCount++;
+    if (selectedAnswers[i] === q.answer) {
+      correctCount++;
+    } else {
+      incorrectQuestions.push({
+        question: q.question,
+        yourAnswer: selectedAnswers[i] || "(No answer)",
+        correctAnswer: q.answer
+      });
+    }
   });
 
-  const resultDiv = document.getElementById("result");
-  resultDiv.innerText = `Your score: ${correctCount} out of ${quizData.length}`;
-  document.getElementById("question").innerText = "Quiz Completed!";
-  document.getElementById("options").innerHTML = "";
-  document.getElementById("timer").innerText = "Time's up or quiz finished.";
-  updateQuestionTracker();
+  // Save results to sessionStorage
+  sessionStorage.setItem('quizScore', correctCount);
+  sessionStorage.setItem('quizTotal', quizData.length);
+  sessionStorage.setItem('quizIncorrect', JSON.stringify(incorrectQuestions));
+
+  // Redirect to results page
+  window.location.href = "results.html";
 }
+
 
 // Event Listener for Skip Button
 document.getElementById("skipBtn").addEventListener("click", skipQuestion);
