@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      padding: 20px;
+      margin: 0;
+    }
+    .quiz-container {
+      background-color: white;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .question {
+      font-size: 20px;
+    }
+    .options {
+      margin-top: 10px;
+    }
+    .options button.option-btn {
+      display: block;
+      width: 100%;
+      margin: 5px 0;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      text-align: left;
+    }
+    .options button.option-btn:hover {
+      background-color: #e0e0e0;
+    }
+    .result {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    .timer {
+      text-align: right;
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    .navigation {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .navigation button {
+      flex: 1;
+      padding: 8px 16px;
+      font-size: 16px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      min-width: 0; /* important for flex shrink on small screens */
+    }
+    .navigation button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Responsive CSS */
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      .quiz-container {
+        max-width: 100%;
+        padding: 15px;
+        box-shadow: none;
+        border-radius: 0;
+      }
+      .question {
+        font-size: 18px;
+      }
+      .options button.option-btn {
+        font-size: 14px;
+        padding: 12px;
+      }
+      .timer {
+        font-size: 14px;
+      }
+      .navigation {
+        flex-direction: column;
+      }
+      .navigation button {
+        font-size: 16px;
+        padding: 12px;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="quiz-container">
+    <div class="timer" id="timer">Time Remaining: 50:00</div>
+    <div id="quiz">
+      <div class="question" id="question">Question text</div>
+      <div class="options" id="options"></div>
+      <div class="navigation">
+        <button id="prevBtn" onclick="prevQuestion()">Previous</button>
+        <button id="nextBtn" onclick="nextQuestion()">Next</button>
+        <button id="submitBtn" onclick="endQuiz()" style="display:none;">Submit</button>
+      </div>
+      <div class="result" id="result"></div>
+    </div>
+  </div>
+
+  <script>
+    const quizData = [
+      {
+        question: "PHP का पूरा नाम क्या है?",
+        options: ["Personal Home Page", "Preprocessed Hypertext Page", "Hypertext Preprocessor", "Programming HTML Processor"],
+        answer: "Hypertext Preprocessor"
+      },
+      {
+        question: "PHP को किसने बनाया था?",
+        options: ["Dennis Ritchie", "James Gosling", "Rasmus Lerdorf", "Guido van Rossum"],
+        answer: "Rasmus Lerdorf"
+      },
+      {
+        question: "PHP किस प्रकार की स्क्रिप्टिंग भाषा है?",
+        options: ["Client-side", "Server-side", "Both A and B", "None of the above"],
+        answer: "Server-side"
+      },
+      {
+        question: "PHP का पहला संस्करण किस वर्ष में आया था?",
+        options: ["1991", "1994", "1999", "2000"],
+        answer: "1994"
+      },
+      {
+        question: "PHP स्क्रिप्ट शुरू और समाप्त कैसे होती है?",
+        options: ["<php> ... </php>", "<!-- php -->", "<?php ... ?>", "<script> ...</ script>"],
+        answer: "<?php ... ?>"
+      },
+      {
+        question: "PHP में वैरिएबल कैसे डिक्लेयर किया जाता है?",
+        options: ["var x = 5;", "$x = 5;", "int x = 5;", "let x = 5;"],
+        answer: "$x = 5;"
+      },
+      {
+        question: "PHP में वैरिएबल नाम केस सेंसिटिव होते हैं?",
+        options: ["कीवर्ड्स की तरह केस इंसेंसिटिव", "केस सेंसिटिव", "केवल लोअरकेस", "केवल अपरकेस"],
+        answer: "केस सेंसिटिव"
+      },
+      {
+        question: "PHP में echo और print का उपयोग किसलिए होता है?",
+        options: ["डेटा को encrypt करने के लिए", "HTML टैग insert करने के लिए", "आउटपुट दिखाने के लिए", "कुकीज़ बनाने के लिए"],
+        answer: "आउटपुट दिखाने के लिए"
+      },
+      {
+        question: "PHP में float डेटा टाइप का उदाहरण क्या है?",
+        options: ["$x = \"10\";", "$x = 10.5;", "$x = TRUE;", "$x = [10];"],
+        answer: "$x = 10.5;"
+      },
+      {
+        question: "PHP में string जोड़ने के लिए कौन सा ऑपरेटर है?",
+        options: ["+", ".", "*", "&"],
+        answer: "."
+      },
+      { question: "PHP में Array को जोड़ने का ऑपरेटर कौन सा है?", options: ["+", "==", "!=", "==="], answer: "+" },
+      { question: "Conditional Assignment Operator कौन सा है?", options: ["?:", "+=", "==", "=>"], answer: "?:" },
+      { question: "PHP में लॉजिकल ऑपरेटर कौन सा नहीं है?", options: ["&&", "||", "++", "!"], answer: "++" },
+      { question: "PHP में exponentiation के लिए कौन सा ऑपरेटर है?", options: ["^", "**", "#", "exp()"], answer: "**" },
+      { question: "वैरिएबल की टाइप और वैल्यू पता करने का फंक्शन कौन सा है?", options: ["gettype()", "type()", "checktype()", "var_dump()"], answer: "var_dump()" },
+      { question: "सबसे सरल conditional statement कौन-सी है?", options: ["switch", "if", "for", "foreach"], answer: "if" },
+      { question: "foreach loop का उपयोग किस लिए होता है?", options: ["single variable के लिए", "array के हर element पर काम करने के लिए", "loops को रोकने के लिए", "condition check के लिए"], answer: "array के हर element पर काम करने के लिए" },
+      { question: "continue statement क्या करता है?", options: ["loop को पूरा रोकता है", "current iteration छोड़कर अगली पर जाता है", "condition check करता है", "code को execute करता है"], answer: "current iteration छोड़कर अगली पर जाता है" },
+      { question: "switch statement में break नहीं हो तो क्या होता है?", options: ["code error देगा", "केवल पहला case चलेगा", "matching case के बाद के सारे cases भी चलेंगे", "switch block skip हो जाएगा"], answer: "matching case के बाद के सारे cases भी चलेंगे" },
+      { question: "while loop कब तक चलता है?", options: ["जब तक condition false हो", "जब तक condition true हो", "निश्चित संख्या बार", "एक बार भी नहीं चलता"], answer: "जब तक condition true हो" },
+      { question: "फ़ंक्शन को define करने के लिए कौन सा कीवर्ड है?", options: ["define", "function", "declare", "set"], answer: "function" },
+    { question: "default parameter कब काम आता है?", options: ["जब सभी पैरामीटर अनिवार्य हों", "जब कोई पैरामीटर ना दिया गया हो", "जब पैरामीटर का टाइप बदलना हो", "कभी नहीं"], answer: "जब कोई पैरामीटर ना दिया गया हो" },
+    { question: "Variadic functions क्या करती हैं?", options: ["केवल एक पैरामीटर लेती हैं", "error देती हैं", "अनिश्चित संख्या में arguments ले सकती हैं", "सिर्फ string पैरामीटर लेती हैं"], answer: "अनिश्चित संख्या में arguments ले सकती हैं" },
+    { question: "किसी फ़ंक्शन को value return करने के लिए कौन-सा statement उपयोग होता है?", options: ["echo", "print", "return", "result"], answer: "return" },
+    { question: "strlen() किस प्रकार का फंक्शन है?", options: ["User-defined", "Built-in", "Variadic", "Optional"], answer: "Built-in" },
+    { question: "MySQL से कनेक्शन के लिए कौन सा function है?", options: ["mysql_connect()", "mysqli_connect()", "connect_db()", "open_mysql_connection()"], answer: "mysqli_connect()" },
+    { question: "PRIMARY KEY का उद्देश्य क्या है?", options: ["कॉलम में null वैल्यू की अनुमति देना", "टेबल में पंक्तियों की विशिष्ट पहचान करना", "एक foreign key बनाना", "अपने आप टाइमस्टैम्प बनाना"], answer: "टेबल में पंक्तियों की विशिष्ट पहचान करना" },
+    { question: "नया रिकॉर्ड जोड़ने के लिए SQL स्टेटमेंट?", options: ["ADD RECORD", "INSERT INTO", "UPDATE TABLE", "NEW ENTRY"], answer: "INSERT INTO" },
+    { question: "UPDATE/DELETE को limit करने के लिए कौन सा clause है?", options: ["ORDER BY", "LIMIT", "WHERE", "GROUP BY"], answer: "WHERE" },
+    { question: "SQL query चलाने के लिए कौन सा method है?", options: ["execute()", "query()", "runQuery()", "mysqli_exec()"], answer: "query()" },
+    { question: "सुरक्षित password स्टोर करने का function?",
+options: ["md5()", "sha1()", "password_hash()", "encrypt_password()"],
+answer: "password_hash()" },
+
+{ question: "password_hash() किसका उपयोग करता है?",
+options: ["SHA1", "SHA256", "bcrypt", "MD5"],
+answer: "bcrypt" },
+
+{ question: "password_verify() का प्रयोग किस लिए होता है?",
+options: [
+"पासवर्ड को डेटाबेस में सेव करने के लिए",
+"पासवर्ड को बदलने के लिए",
+"पासवर्ड को डिक्रिप्ट करने के लिए",
+"पासवर्ड को हैश से मिलाने के लिए"
+],
+answer: "पासवर्ड को हैश से मिलाने के लिए" },
+
+{ question: "हैश reversible होता है?",
+options: ["bcrypt", "SHA256", "MD5", "कोई नहीं"],
+answer: "कोई नहीं" },
+
+{ question: "password_verify() true return करे तो मतलब?",
+options: [
+"पासवर्ड गलत है",
+"उपयोगकर्ता सक्रिय नहीं है",
+"पासवर्ड सही है",
+"पासवर्ड expire हो गया है"
+],
+answer: "पासवर्ड सही है" },
+
+{ question: "Cookie क्या होती है?",
+options: [
+"एक प्रकार का डेटाबेस",
+"यूज़र की पहचान के लिए एक छोटा फ़ाइल",
+"एक PHP function",
+"एक डेटा स्ट्रक्चर"
+],
+answer: "यूज़र की पहचान के लिए एक छोटा फ़ाइल" },
+
+{ question: "Cookie सेट करने का function?",
+options: ["create_cookie()", "cookie_set()", "setcookie()", "makecookie()"],
+answer: "setcookie()" },
+
+{ question: "Cookie को हटाने के लिए?",
+options: [
+'unset($_COOKIE["name"])',
+'setcookie("name", "", time() - 3600)',
+'deletecookie("name")',
+'$_COOKIE["name"] = null'
+],
+answer: 'setcookie("name", "", time() - 3600)' },
+
+{ question: "Cookie प्राप्त करने के लिए superglobal?",
+options: ["$_GET", "$_POST", "$_COOKIE", "$_SESSION"],
+answer: "$_COOKIE" },
+
+{ question: "Cookie पूरे साइट पर उपलब्ध कराने के लिए path?",
+options: ["/admin", "/index.php", "/", "/user"],
+answer: "/" },
+{ question: "CAPTCHA का मुख्य उद्देश्य क्या है?",
+options: [
+"वेबसाइट डिज़ाइन को बेहतर बनाना",
+"इंसानों और बॉट्स के बीच फर्क करना",
+"पासवर्ड encrypt करना",
+"वेबसाइट को फास्ट बनाना"
+],
+answer: "इंसानों और बॉट्स के बीच फर्क करना" },
+
+{ question: "PHP में text-based CAPTCHA में कौन-सी PHP लाइब्रेरी का उपयोग होता है?",
+options: ["MySQL", "GD", "PDO", "jQuery"],
+answer: "GD" },
+
+{ question: "CAPTCHA टेक्स्ट को temporarily कहाँ store किया जाता है?",
+options: ["Database", "Cookie", "File System", "Session"],
+answer: "Session" },
+
+{ question: "CAPTCHA के लिए random string generate करने के लिए निम्न में से कौन-सा method उपयोग किया गया है?",
+options: ["rand()", "password_hash()", "md5(time())", "uniqid()"],
+answer: "md5(time())" },
+
+{ question: "PHP में image के output को PNG format में दिखाने के लिए कौन-सा function उपयोग होता है?",
+options: ["imagejpg()", "imagepng()", "imagetext()", "imagewrite()"],
+answer: "imagepng()" },
+
+{ question: "Bootstrap क्या है?",
+options: [
+"एक डेटाबेस",
+"एक फ्रंट-एंड CSS framework",
+"एक सर्वर साइड भाषा",
+"एक वेब होस्टिंग सेवा"
+],
+answer: "एक फ्रंट-एंड CSS framework" },
+
+{ question: "Tooltip को सक्रिय करने के लिए किस attribute का उपयोग होता है?",
+options: [
+"data-title",
+"title-toggle",
+'data-toggle="tooltip"',
+"tooltip-on"
+],
+answer: 'data-toggle="tooltip"' },
+
+{ question: "Toast क्या है?",
+options: [
+"एक डाटा संरचना",
+"एक प्रकार का बटन",
+"एक अस्थायी सूचना बॉक्स",
+"एक PHP फ़ंक्शन"
+],
+answer: "एक अस्थायी सूचना बॉक्स" },
+
+{ question: "प्रगति (Progress Bar) दिखाने के लिए Bootstrap में किस CSS क्लास का प्रयोग होता है?",
+options: [".bar", ".progress", ".loader", ".status"],
+answer: ".progress" },
+
+{ question: "Bootstrap में .text-center क्लास का क्या कार्य है?",
+options: [
+"टेक्स्ट को बाएँ संरेखित करना",
+"टेक्स्ट को दाएँ संरेखित करना",
+"टेक्स्ट को केंद्र में संरेखित करना",
+"टेक्स्ट को छुपाना"
+],
+answer: "टेक्स्ट को केंद्र में संरेखित करना" }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let selectedAnswers = new Array(quizData.length).fill(null);
+    let totalTime = 50 * 60; // 50 minutes
+
+    function updateTimer() {
+      const minutes = Math.floor(totalTime / 60);
+      const seconds = totalTime % 60;
+      document.getElementById("timer").innerText = `Time Remaining: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      if (totalTime <= 0) {
+        endQuiz();
+      } else {
+        totalTime--;
+      }
+    }
+
+    function loadQuestion() {
+      const current = quizData[currentQuestion];
+      document.getElementById("question").innerText = current.question;
+      const optionsContainer = document.getElementById("options");
+      optionsContainer.innerHTML = "";
+      current.options.forEach(option => {
+        const button = document.createElement("button");
+        button.className = 'option-btn';
+        button.innerText = option;
+        button.onclick = () => {
+          selectedAnswers[currentQuestion] = option;
+          document.querySelectorAll('.option-btn').forEach(btn => btn.style.backgroundColor = '');
+          button.style.backgroundColor = '#c8f7c5';
+        };
+        if (selectedAnswers[currentQuestion] === option) {
+          button.style.backgroundColor = '#c8f7c5';
+        }
+        optionsContainer.appendChild(button);
+      });
+      document.getElementById("prevBtn").disabled = currentQuestion === 0;
+      document.getElementById("nextBtn").style.display = currentQuestion === quizData.length - 1 ? "none" : "inline-block";
+      document.getElementById("submitBtn").style.display = currentQuestion === quizData.length - 1 ? "inline-block" : "none";
+    }
+
+    function nextQuestion() {
+      if (currentQuestion < quizData.length - 1) {
+        currentQuestion++;
+        loadQuestion();
+      }
+    }
+
+    function prevQuestion() {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        loadQuestion();
+      }
+    }
+
+    function endQuiz() {
+      clearInterval(timerInterval);
+      score = 0;
+      quizData.forEach((q, index) => {
+        if (selectedAnswers[index] === q.answer) {
+          score++;
+        }
+      });
+      document.getElementById("quiz").innerHTML = `<div class='result'>You scored ${score} out of ${quizData.length}</div>`;
+    }
+
+    const timerInterval = setInterval(updateTimer, 1000);
+    loadQuestion();
+  </script>
+
+</body>
+</html>
